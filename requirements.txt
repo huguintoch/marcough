@@ -1,0 +1,4 @@
+pyreadline==2.1
+python-speech-features==0.6
+hmmlearn
+sklearn
