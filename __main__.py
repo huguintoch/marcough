@@ -1,12 +1,13 @@
-from sklearn.metrics import classification_report
-from python_speech_features import mfcc
-from scipy.io import wavfile
+import os
+import itertools
 import numpy as np
 import matplotlib.pyplot as plt
+
 from hmmlearn import hmm
+from scipy.io import wavfile
+from python_speech_features import mfcc
 from sklearn.metrics import confusion_matrix
-import itertools
-import os
+from sklearn.metrics import classification_report
 
 
 class HMMTrainer(object):
@@ -67,7 +68,7 @@ def plot_confusion_matrix(cm, classes,
 
 
 hmm_models = []
-input_folder = 'virusWav/'
+input_folder = './virusWav/'
 # Parse the input directory
 for dirname in os.listdir(input_folder):
     # Get the name of the subfolder
@@ -94,20 +95,19 @@ for dirname in os.listdir(input_folder):
 
             # Append the label
         y_words.append(label)
+
     print('X.shape =', X.shape)
+
     # Train and save HMM model
     hmm_trainer = HMMTrainer(n_components=10)
-    print("hola")
     hmm_trainer.train(X)
-    print("Hola 2")
     hmm_models.append((hmm_trainer, label))
-    print("hola 3")
     hmm_trainer = None
 
     print(hmm_models)
 
 
-input_folder = 'test/'
+input_folder = './test/'
 real_labels = []
 pred_labels = []
 for dirname in os.listdir(input_folder):
@@ -117,8 +117,6 @@ for dirname in os.listdir(input_folder):
         continue
     # Extract the label
     label_real = subfolder[subfolder.rfind('/') + 1:]
-
-    print(f"label realllll {label_real}")
 
     for filename in [x for x in os.listdir(subfolder) if x.endswith('.wav')][:-1]:
         real_labels.append(label_real)
@@ -146,6 +144,5 @@ plot_confusion_matrix(cm, classes=classes, normalize=True,
                       title='Normalized confusion matrix')
 
 plt.show()
-
 
 print(classification_report(real_labels, pred_labels, target_names=classes))
