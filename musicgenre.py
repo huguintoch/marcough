@@ -11,25 +11,28 @@ import os
 
 
 class HMMTrainer(object):
-  def __init__(self, model_name='GaussianHMM', n_components=4, cov_type='diag', n_iter=1000):
-    self.model_name = model_name
-    self.n_components = n_components
-    self.cov_type = cov_type
-    self.n_iter = n_iter
-    self.models = []
-    if self.model_name == 'GaussianHMM':
-      self.model = hmm.GaussianHMM(
-          n_components=self.n_components,        covariance_type=self.cov_type, n_iter=self.n_iter)
-    else:
-      raise TypeError('Invalid model type')
+    def __init__(self, model_name='GaussianHMM', n_components=4, cov_type='diag', n_iter=1):
+        self.model_name = model_name
+        self.n_components = n_components
+        self.cov_type = cov_type
+        self.n_iter = n_iter
+        self.models = []
+        if self.model_name == 'GaussianHMM':
+            self.model = hmm.GaussianHMM(
+                n_components=self.n_components,        
+                covariance_type=self.cov_type, 
+                n_iter=self.n_iter
+            )
+        else:
+            raise TypeError('Invalid model type')
 
-  def train(self, X):
-    np.seterr(all='ignore')
-    self.models.append(self.model.fit(X))
-    # Run the model on input data
+    def train(self, X):
+        np.seterr(all='ignore')
+        self.models.append(self.model.fit(X))
+        # Run the model on input data
 
-  def get_score(self, input_data):
-    return self.model.score(input_data)
+    def get_score(self, input_data):
+        return self.model.score(input_data)
 
 
 def plot_confusion_matrix(cm, classes,
@@ -63,30 +66,7 @@ def plot_confusion_matrix(cm, classes,
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
 
-sampling_freq, audio = wavfile.read("genres/blues/blues.00000.wav")
-mfcc_features = mfcc(audio, sampling_freq)
-filterbank_features = logfbank(audio, sampling_freq)
 
-print('\nMFCC:\nNumber of windows =', mfcc_features.shape[0])
-print('Length of each feature =', mfcc_features.shape[1])
-print('\nFilter bank:\nNumber of windows =', filterbank_features.shape[0])
-print('Length of each feature =', filterbank_features.shape[1])
-
-genre_list = ["blues", "classical", "jazz", "country", "pop", "rock", "metal", "disco", "hiphop", "reggae"]
-print(len(genre_list))
-figure = plt.figure(figsize=(20, 3))
-for idx, genre in enumerate(genre_list):
-   example_data_path = 'genres /' + genre
-   file_paths = glob.glob(path.join(example_data_path, '*.wav'))
-   sampling_freq, audio = wavfile.read(file_paths[0])
-   mfcc_features = mfcc(audio, sampling_freq, nfft=1024)
-   print(file_paths[0], mfcc_features.shape[0])
-   plt.yscale('linear')
-   plt.matshow((mfcc_features.T)[:, :300])
-   plt.text(150, -10, genre, horizontalalignment='center', fontsize=20)
-
-plt.yscale('linear')
-plt.show()
 
 hmm_models = []
 input_folder = 'genres/'
@@ -106,9 +86,9 @@ for dirname in os.listdir(input_folder):
         # Read the input file
         filepath = os.path.join(subfolder, filename)
         sampling_freq, audio = wavfile.read(filepath)
-          # Extract MFCC features
-        mfcc_features = mfcc(audio, sampling_freq)
-           # Append to the variable X
+        # Extract MFCC features
+        mfcc_features = mfcc(audio, sampling_freq, nfft=1024)
+        # Append to the variable X
         if len(X) == 0:
             X = mfcc_features
         else:
@@ -119,9 +99,14 @@ for dirname in os.listdir(input_folder):
     print('X.shape =', X.shape)
     # Train and save HMM model
     hmm_trainer = HMMTrainer(n_components=10)
+    print("hola")
     hmm_trainer.train(X)
+    print("Hola 2")
     hmm_models.append((hmm_trainer, label))
+    print("hola 3")
     hmm_trainer = None
+
+    print(hmm_models)
 
 
 input_folder = 'test/'
@@ -129,23 +114,41 @@ real_labels = []
 pred_labels = []
 for dirname in os.listdir(input_folder):
 
-  subfolder = os.path.join(input_folder, dirname)
-  if not os.path.isdir(subfolder):
-    continue
-  # Extract the label
-  label_real = subfolder[subfolder.rfind('/') + 1:]
+    subfolder = os.path.join(input_folder, dirname)
+    if not os.path.isdir(subfolder):
+        continue
+    # Extract the label
+    label_real = subfolder[subfolder.rfind('/') + 1:]
 
-  for filename in [x for x in os.listdir(subfolder) if x.endswith('.wav')][:-1]:
-    real_labels.append(label_real)
-    filepath = os.path.join(subfolder, filename)
-    sampling_freq, audio = wavfile.read(filepath)
-    mfcc_features = mfcc(audio, sampling_freq)
-    max_score = -9999999999999999999
-    output_label = None
-    for item in hmm_models:
-       hmm_model, label = item
-       score = hmm_model.get_score(mfcc_features)
-       if score > max_score:
-          max_score = score
-          output_label = label
-pred_labels.append(output_label)
+    print(f"label realllll {label_real}")
+
+    for filename in [x for x in os.listdir(subfolder) if x.endswith('.wav')][:-1]:
+        real_labels.append(label_real)
+        filepath = os.path.join(subfolder, filename)
+        sampling_freq, audio = wavfile.read(filepath)
+        mfcc_features = mfcc(audio, sampling_freq, nfft=1024)
+        max_score = -9999999999999999999
+        output_label = None
+        for item in hmm_models:
+            hmm_model, label = item
+            score = hmm_model.get_score(mfcc_features)
+            if score > max_score:
+                max_score = score
+                output_label = label
+        pred_labels.append(output_label)
+
+
+print(real_labels, pred_labels)
+
+cm = confusion_matrix(real_labels, pred_labels)
+np.set_printoptions(precision=2)
+classes = ["blues","classical", "country", "disco", "hiphop", "jazz", "metal", "pop", "reggae", "rock"]
+plt.figure()
+plot_confusion_matrix(cm, classes=classes, normalize=True,
+                      title='Normalized confusion matrix')
+
+plt.show()
+
+
+from sklearn.metrics import classification_report
+print(classification_report(real_labels, pred_labels, target_names=classes))
