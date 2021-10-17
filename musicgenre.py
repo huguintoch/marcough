@@ -1,6 +1,5 @@
-import os.path as path
-import glob
-from python_speech_features import mfcc, logfbank
+from sklearn.metrics import classification_report
+from python_speech_features import mfcc
 from scipy.io import wavfile
 import numpy as np
 import matplotlib.pyplot as plt
@@ -11,7 +10,7 @@ import os
 
 
 class HMMTrainer(object):
-    def __init__(self, model_name='GaussianHMM', n_components=4, cov_type='diag', n_iter=1):
+    def __init__(self, model_name='GaussianHMM', n_components=4, cov_type='diag', n_iter=100):
         self.model_name = model_name
         self.n_components = n_components
         self.cov_type = cov_type
@@ -19,8 +18,8 @@ class HMMTrainer(object):
         self.models = []
         if self.model_name == 'GaussianHMM':
             self.model = hmm.GaussianHMM(
-                n_components=self.n_components,        
-                covariance_type=self.cov_type, 
+                n_components=self.n_components,
+                covariance_type=self.cov_type,
                 n_iter=self.n_iter
             )
         else:
@@ -67,9 +66,8 @@ def plot_confusion_matrix(cm, classes,
     plt.xlabel('Predicted label')
 
 
-
 hmm_models = []
-input_folder = 'genres/'
+input_folder = 'virusWav/'
 # Parse the input directory
 for dirname in os.listdir(input_folder):
     # Get the name of the subfolder
@@ -87,7 +85,7 @@ for dirname in os.listdir(input_folder):
         filepath = os.path.join(subfolder, filename)
         sampling_freq, audio = wavfile.read(filepath)
         # Extract MFCC features
-        mfcc_features = mfcc(audio, sampling_freq, nfft=1024)
+        mfcc_features = mfcc(audio, sampling_freq, nfft=2048)
         # Append to the variable X
         if len(X) == 0:
             X = mfcc_features
@@ -126,7 +124,7 @@ for dirname in os.listdir(input_folder):
         real_labels.append(label_real)
         filepath = os.path.join(subfolder, filename)
         sampling_freq, audio = wavfile.read(filepath)
-        mfcc_features = mfcc(audio, sampling_freq, nfft=1024)
+        mfcc_features = mfcc(audio, sampling_freq, nfft=2048)
         max_score = -9999999999999999999
         output_label = None
         for item in hmm_models:
@@ -142,7 +140,7 @@ print(real_labels, pred_labels)
 
 cm = confusion_matrix(real_labels, pred_labels)
 np.set_printoptions(precision=2)
-classes = ["blues","classical", "country", "disco", "hiphop", "jazz", "metal", "pop", "reggae", "rock"]
+classes = ["neg", "pos"]
 plt.figure()
 plot_confusion_matrix(cm, classes=classes, normalize=True,
                       title='Normalized confusion matrix')
@@ -150,5 +148,4 @@ plot_confusion_matrix(cm, classes=classes, normalize=True,
 plt.show()
 
 
-from sklearn.metrics import classification_report
 print(classification_report(real_labels, pred_labels, target_names=classes))
