@@ -99,7 +99,7 @@ for dirname in os.listdir(input_folder):
     print('X.shape =', X.shape)
 
     # Train and save HMM model
-    hmm_trainer = HMMTrainer(n_components=10)
+    hmm_trainer = HMMTrainer(n_components=9)
     hmm_trainer.train(X)
     hmm_models.append((hmm_trainer, label))
     hmm_trainer = None
